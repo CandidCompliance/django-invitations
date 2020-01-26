@@ -36,6 +36,7 @@ class SendInvite(FormView):
         try:
             invite = form.save(email)
             invite.inviter = self.request.user
+            invite.organization = self.request.user.organization
             invite.save()
             invite.send_invitation(self.request)
         except Exception:
@@ -118,7 +119,7 @@ class AcceptInvite(SingleObjectMixin, View):
                 (not invitation or
                  (invitation and (invitation.accepted or
                                   invitation.key_expired()))):
-            return HttpResponse(status=410)
+            return JsonResponse({'status': 'error', 'message': 'This invitation is no longer valid, or never existed. Please ask an account administrator to send you another invite.'}, status=410)
 
         # No invitation was found.
         if not invitation:
@@ -127,7 +128,7 @@ class AcceptInvite(SingleObjectMixin, View):
                 self.request,
                 messages.ERROR,
                 'invitations/messages/invite_invalid.txt')
-            return redirect(app_settings.LOGIN_REDIRECT)
+            return JsonResponse({'status': 'error', 'message': 'No invitation was found with this key. Please ask an account administrator to send you another invite.'}, status=410)
 
         # The invitation was previously accepted, redirect to the login
         # view.
@@ -138,7 +139,7 @@ class AcceptInvite(SingleObjectMixin, View):
                 'invitations/messages/invite_already_accepted.txt',
                 {'email': invitation.email})
             # Redirect to login since there's hopefully an account already.
-            return redirect(app_settings.LOGIN_REDIRECT)
+            return JsonResponse({'status': 'error', 'message': 'This invitation was already accepted. Please ask an account administrator to send you another invite.'}, status=410)
 
         # The key was expired.
         if invitation.key_expired():
@@ -148,7 +149,7 @@ class AcceptInvite(SingleObjectMixin, View):
                 'invitations/messages/invite_expired.txt',
                 {'email': invitation.email})
             # Redirect to sign-up since they might be able to register anyway.
-            return redirect(self.get_signup_redirect())
+            return JsonResponse({'status': 'error', 'message': 'This invitation has expired. Please ask an account administrator to send you another invite.'}, status=410)
 
         # The invitation is valid.
         # Mark it as accepted now if ACCEPT_INVITE_AFTER_SIGNUP is False.
@@ -160,7 +161,7 @@ class AcceptInvite(SingleObjectMixin, View):
         get_invitations_adapter().stash_verified_email(
             self.request, invitation.email)
 
-        return JsonResponse({'status': 'success', 'message': 'You have successfully accepted the invite. Please sign up now, before the invite expires.'})
+        return JsonResponse({'status': 'success', 'message': 'This is a valid invitation. Please sign up now, before the invite expires.'})
 
     def get_object(self, queryset=None):
         if queryset is None:

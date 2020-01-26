@@ -12,6 +12,8 @@ from django.utils.crypto import get_random_string
 from django.utils.encoding import python_2_unicode_compatible
 from django.utils.translation import ugettext_lazy as _
 
+from authentication.models import Organization 
+
 from . import signals
 from .adapters import get_invitations_adapter
 from .app_settings import app_settings
@@ -24,14 +26,16 @@ class Invitation(AbstractBaseInvitation):
                               max_length=app_settings.EMAIL_MAX_LENGTH)
     created = models.DateTimeField(verbose_name=_('created'),
                                    default=timezone.now)
+    organization = models.ForeignKey(Organization, blank=False, null=False, on_delete=models.DO_NOTHING)
 
     @classmethod
-    def create(cls, email, inviter=None, **kwargs):
+    def create(cls, email, inviter=None, organization=None, **kwargs):
         key = get_random_string(64).lower()
         instance = cls._default_manager.create(
             email=email,
             key=key,
             inviter=inviter,
+            organization=organization,
             **kwargs)
         return instance
 
@@ -52,6 +56,7 @@ class Invitation(AbstractBaseInvitation):
             'email': self.email,
             'key': self.key,
             'inviter': self.inviter,
+            'organization': self.organization
         })
 
         email_template = 'invitations/email/email_invite'
