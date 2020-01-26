@@ -4,7 +4,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
-from django.http import Http404, HttpResponse
+from django.http import Http404, HttpResponse, JsonResponse
 from django.shortcuts import redirect
 from django.utils.decorators import method_decorator
 from django.utils.translation import ugettext_lazy as _
@@ -160,7 +160,7 @@ class AcceptInvite(SingleObjectMixin, View):
         get_invitations_adapter().stash_verified_email(
             self.request, invitation.email)
 
-        return redirect(self.get_signup_redirect())
+        return JsonResponse({'status': 'success', 'message': 'You have successfully accepted the invite. Please sign up now, before the invite expires.'})
 
     def get_object(self, queryset=None):
         if queryset is None:
