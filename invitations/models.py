@@ -99,3 +99,9 @@ if hasattr(settings, 'ACCOUNT_ADAPTER'):
 
             def get_user_signed_up_signal(self):
                 return user_signed_up
+
+            def send_mail(self, template_prefix, email, context):
+                context['activate_url'] = settings.FRONTEND_URL + \
+                    'verify-email/' + context['key']
+                msg = self.render_mail(template_prefix, email, context)
+                msg.send()
