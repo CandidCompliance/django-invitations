@@ -27,15 +27,17 @@ class Invitation(AbstractBaseInvitation):
     created = models.DateTimeField(verbose_name=_('created'),
                                    default=timezone.now)
     organization = models.ForeignKey(Organization, blank=False, null=False, on_delete=models.DO_NOTHING)
+    role = models.CharField(max_length=20, blank=False)
 
     @classmethod
-    def create(cls, email, inviter=None, organization=None, **kwargs):
+    def create(cls, email, role, inviter=None, organization=None, **kwargs):
         key = get_random_string(64).lower()
         instance = cls._default_manager.create(
             email=email,
             key=key,
             inviter=inviter,
             organization=organization,
+            role=role,
             **kwargs)
         return instance
 
@@ -56,7 +58,8 @@ class Invitation(AbstractBaseInvitation):
             'email': self.email,
             'key': self.key,
             'inviter': self.inviter,
-            'organization': self.organization
+            'organization': self.organization,
+            'role': self.role
         })
 
         email_template = 'invitations/email/email_invite'
